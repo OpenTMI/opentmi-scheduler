@@ -1,0 +1,36 @@
+
+{
+  "name": "tmt-scheduler",
+  "version": "0.1.0",
+  "description": "TMT scheduler addon",
+  "main": "index.js",
+  "scripts": {
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://bitbucket.com/_tmt_/tmt-scheduler.git"
+  },
+  "keywords": [
+    "test",
+    "automation",
+    "management",
+    "scheduler"
+  ],
+  "author": "Jussi Vatjus-Anttila <jussiva@gmail.com>",
+  "license": "MIT",
+  "readmeFilename": "Readme.md",
+  "tmt": {
+    "id": "scheduler",
+    "title": "Scheduler",
+    "type": "provider",
+    "hosted": true,
+    "config": {
+      "controller": "SchedulerCtrl"
+    }
+  },
+  "devDependencies": {
+  },
+  "dependencies": {
+    "schedulerjs": "*"
+  }
+}
