@@ -1,25 +1,26 @@
 
 {
-  "name": "tmt-scheduler",
+  "name": "opentmi-scheduler",
   "version": "0.1.0",
-  "description": "TMT scheduler addon",
+  "description": "OpenTMI task scheduler addon",
   "main": "index.js",
   "scripts": {
   },
   "repository": {
     "type": "git",
-    "url": "https://bitbucket.com/_tmt_/tmt-scheduler.git"
+    "url": "https://github.com/OpenTMI/opentmi-scheduler.git"
   },
   "keywords": [
+    "opentmi",
     "test",
     "automation",
     "management",
     "scheduler"
   ],
   "author": "Jussi Vatjus-Anttila <jussiva@gmail.com>",
-  "license": "MIT",
-  "readmeFilename": "Readme.md",
-  "tmt": {
+  "license": "GPLv3",
+  "readmeFilename": "README.md",
+  "opentmi": {
     "id": "scheduler",
     "title": "Scheduler",
     "type": "provider",
@@ -31,6 +32,7 @@
   "devDependencies": {
   },
   "dependencies": {
-    "schedulerjs": "*"
+    "schedulerjs": "*",
+    "winston": "*"
   }
 }

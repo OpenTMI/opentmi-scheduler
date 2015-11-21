@@ -3,7 +3,6 @@ function AddonTaskScheduler (app, server, io, passport){
 
   this.name = 'scheduler addon';
   this.description = 'Schedule tasks';
-  this.requirements = ['schedulejs']
 
   this.register = function(){
 
