@@ -1,108 +1,131 @@
 var express = require('express');
 var nconf = require('nconf');
 var winston = require('winston');
-var _ = require('underscore');
+var _ = require('lodash');
 var async = require('async');
+var Schedule = require('schedulejs');
 
-//var Schedule = require('schedulejs');
+var logger = {
+  silly: console.log,
+  debug: console.log,
+  info: console.log,
+  warn: console.log,
+  error: console.log
+};
 
-
+//logger = winston;
 
 function AddonTaskScheduler (app, server, io, passport){
 
-  var self = this;
-  this.name = 'scheduler addon';
-  this.description = 'Schedule tasks';
-  var clients = {};
-
-  var next_job = function(client, cb) {
-
-    var tasks = [
-      {id:1, duration: 30, resources: ['A']},
-      {id:2, duration: 60, resources: ['B']},
-      {id:3, duration: 60, resources: [['B', 'D'], 'A']}
-    ];
-    var resources = [
-      {id: 'A'},
-      {id: 'B'},
-      {id: 'C'},
-      {id: 'D'}
-    ];
-
-    //var schedule = Schedule.create(tasks, resources, null, new Date());
-    //res.json(schedule);
-    cb(null, tasks[0]);
-  };
-  var task_accepted = function(client, accept) {
-
-  };
-
-  this.register = function(){
-    self.nsp = io.of('/scheduler'); 
-    self.nsp.on('connection', connection);
-
-    /*app.get('/scheduler/clients', function(req, res){
-        res.status(200).json(clients);
-    });*/
-  }
-  var getClient = function(socketid) {
-    return _.find(clients, {socketid: socketid});
-  }
-
-  var connection = function(socket){
-    console.log('client connected, wait for register request');
-    //bind events 
-    socket.on('register_request', register_request.bind(socket));
-    socket.on('disconnect', disconnect.bind(socket));
-  };
-  var register_request = function(data) {
-    var socket = this;
-    console.log('register_request:', data);
-    clients[data.id] = {
-      id: data.id,
-      socketid: socket.id, 
-      registered: true
+    var self = this, clients = [];
+    this.name = 'scheduler addon';
+    this.description = 'Schedule tasks';
+    var get_tasks = function () {
+      return [
+            {id:1, duration: 30, resources: ['A']},
+            {id:2, duration: 60, resources: ['ls']},
+            {id:3, duration: 60, resources: [['B', 'D'], 'A']}
+        ];
     };
-    var client = getClient(socket.id); 
-    socket.on('unregister', unregister.bind(this));
-    socket.on('available', available.bind(this));
-    socket.on('busy', busy.bind(this));
-    socket.emit('register_response', clients[data.id]);
-  }
-  var unregister = function(data) {
-    var socket = this;
-    getClient(socket.id).registered = false;
-  }
-  var available = function(data) {
-    var socket = this;
-    var client = getClient(socket.id);
-    console.log('find next job for client '+client.id);
-    next_job(client, function(error, job){
-      if(job) {
-        console.log('request job to be executed by client '+ client.id);
-        socket.emit('job_request', job, job_response.bind(this));
-      }
-    }.bind(this));
-  }
-  var job_response = function(data) {
-    var socket = this;
-    if(data.accept) {
-      var client = getClient(socket.id); 
-      task_accepted.bind(client)(data);
+    var get_client_resources = function (client) {
+        /*var resources = [
+          {id: 'A'},
+          {id: 'B'},
+          {id: 'C'},
+          {id: 'D'}
+        ];*/
+        return client.capabilities;
     }
-  }
-  var busy = function(data) {
-    console.log('client busy:', data)
-  }
-  var disconnect = function(data) {
-    var socket = this;
-    var client = getClient(socket.id);
-    if(client) {
-      client.connected = false;
-    }
-  }
+    var next_job = function (client, cb) {
+        var tasks = get_tasks();
+        var resources = get_client_resources(client);
+        logger.silly('client resources: ', resources);
+        logger.silly('tasks: ', tasks);
+        //http://bunkat.github.io/schedule/
+        //var schedule = Schedule.create(tasks, resources);
+        //logger.silly(schedule)
+        //cb(null, schedule[0]);
+        var task = tasks[0];
+        logger.silly('request task: ', task);
+        cb(null, task);
+    };
+    var job_accepted = function (job, accept) {
+        var client = this;
+    };
 
-  return this;
+    this.register = function () {
+        self.nsp = io.of('/scheduler'); 
+        self.nsp.on('connection', connection);
+        io.on('error', logger.error);
+        /*app.get('/scheduler/clients', function(req, res){
+            res.status(200).json(clients);
+        });*/
+    }
+    var getClient = function (socketid) {
+        return _.find(clients, {socketid: socketid});
+    };
+
+    var connection = function (socket){
+        logger.debug('client connected, wait for register request');
+        //bind events 
+        socket.on('register_request', register_request.bind(socket));
+        socket.on('disconnect', disconnect.bind(socket));
+        socket.on('error', logger.error);
+    };
+    var register_request = function (data) {
+        var socket = this;
+        logger.info('register_request:', data);
+        var client = _.extend(data, {
+            id: data.id,
+            socketid: socket.id, 
+            registered: true
+        });
+        clients.push(client);
+        socket.on('unregister', unregister.bind(this));
+        socket.on('available', available.bind(socket));
+        socket.on('job_ready', job_ready.bind(socket));
+        socket.emit('register_response', client);
+    };
+    var unregister = function (data) {
+        var socket = this;
+        getClient(socket.id).registered = false;
+    };
+    var job_ready = function (error, data) {
+      if( error ) {
+        logger.error('job fails: ', error);
+      } else {
+        logger.info(data);
+      }
+    }
+    var available = function (data) {
+        var socket = this;
+        var client = getClient(socket.id);
+        logger.silly('find next job for client %s', client.id);
+        
+        next_job(client, function (error, job){
+            if(job) {
+                var job_accept = function (data) {
+                    logger.silly('job_accept', data);
+                    if(data.accept) {
+                        logger.debug("client accepted job: ", job);
+                        job_accepted.bind(client)(job, data);
+                    }
+                };
+                logger.debug('request job to be executed by client '+ client.id);
+                socket.emit('job_request', job, job_accept);
+            }
+        }.bind(this));
+    };
+
+    var disconnect = function() {
+        var socket = this,
+            client = getClient(socket.id);
+        if (client) {
+            client.connected = false;
+        }
+    };
+
+    return this;
 }
 
 exports = module.exports = AddonTaskScheduler;

@@ -1,0 +1,33 @@
+{
+  "name": "opentmi-job-executor",
+  "version": "0.1.0",
+  "description": "OpenTMI scheduler client for executing jobs",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/OpenTMI/opentmi-scheduler.git"
+  },
+  "keywords": [
+    "OpenTMI",
+    "scheduler",
+    "client",
+    "test",
+    "automation",
+    "testautomation",
+    "CI"
+  ],
+  "author": "Jussi Vatjus-Anttila",
+  "license": "GPL-3.0",
+  "bugs": {
+    "url": "https://github.com/OpenTMI/opentmi-scheduler/issues"
+  },
+  "homepage": "https://github.com/OpenTMI/opentmi-scheduler/client#readme",
+  "dependencies": {
+    "lodash": "^4.12.0",
+    "winston": "^2.2.0",
+    "socket.io-client": "*"
+  }
+}
