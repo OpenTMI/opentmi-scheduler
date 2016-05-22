@@ -20,11 +20,15 @@ function AddonTaskScheduler (app, server, io, passport){
     var self = this, clients = [];
     this.name = 'scheduler addon';
     this.description = 'Schedule tasks';
-    var get_tasks = function () {
+
+    var concurrentFailTheshold = 5;
+
+
+    var get_jobs = function () {
       return [
             {id:11, duration: 30, resources: ['A']},
             {id:22, duration: 60, resources: ['ls']},
-            {id:33, duration: 60, resources: ['A']}
+            {id:33, duration: 60, resources: ['A','B']}
         ];
     };
     var get_client_resources = function (client) {
@@ -37,16 +41,15 @@ function AddonTaskScheduler (app, server, io, passport){
         return client.capabilities;
     }
     var next_job = function (client, cb) {
-        var tasks = get_tasks();
+        var tasks = get_jobs();
         var resources = get_client_resources(client);
-        //logger.silly('client resources: ', resources);
-        //logger.silly('tasks: ', tasks);
-        //http://bunkat.github.io/schedule/
-        
-        console.log(tasks, resources);
+        logger.silly('client resources: ', resources);
+        logger.silly('tasks: ', tasks);
 
-        var schedule = Schedule.create(tasks, resources);
-        logger.silly(JSON.stringify(schedule, null, 2))
+        //http://bunkat.github.io/schedule/
+        //var schedule = Schedule.create(tasks, resources);
+        //schedule.
+        //logger.silly(JSON.stringify(schedule, null, 2))
         //cb(null, schedule[0]);
         
         var task = tasks[0];
@@ -92,19 +95,24 @@ function AddonTaskScheduler (app, server, io, passport){
         }
     };
     var register_request = function (data, cb) {
-        console.log(cb);
         var socket = this;
         logger.info('register:', data);
         var client = getClient(data.id);
         if (!client) {
           client = _.extend(data, {
               id: data.id,
-              socketid: socket.id
+              stats: {
+                concurrentFails: 0,
+                fails: 0,
+                success: 0
+              },
+              concurrentFailTheshold: concurrentFailTheshold
           });
-          client.connected = true;
           clients.push(client);
         }
-        socket.on('unregister', unregister.bind(this));
+        client.socketid = socket.id;
+        client.connected = true;
+        socket.on('unregister', unregister.bind(socket));
         socket.on('available', available.bind(socket));
         socket.on('job_ready', job_ready.bind(socket));
         cb(null, client); //accept
@@ -119,14 +127,23 @@ function AddonTaskScheduler (app, server, io, passport){
       client.job = false;
       if( error ) {
         logger.error('job_ready: ', error);
+        client.stats.fails++;
+        client.stats.concurrentFails++;
+        if(client.stats.concurrentFails > client.concurrentFailTheshold) {
+            logger.error('Client fails multpiple times, kick it out');
+            socket.disconnect();
+        }
       } else {
         logger.info('job_ready: ', data);
+        client.stats.concurrentFails = 0;
+        client.stats.success++;
       }
     }
     var available = function (data) {
         var socket = this;
         var client = getClient(socket.id);
         if(!client) {
+            logger.warn('unknown client');
             socket.disconnect();
             return;
         }

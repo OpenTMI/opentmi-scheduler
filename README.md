@@ -4,6 +4,9 @@ Scheduler provide socketio API for "executors" which run some jobs, e.g. test jo
 
 **.. NOT IMPLEMENTED ..**
 
+
+# Protocol
+
 ```
 SCHEDULER                   CLIENT
   socketio url: "<host>/scheduler"

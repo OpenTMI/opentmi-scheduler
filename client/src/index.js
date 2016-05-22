@@ -88,7 +88,7 @@ Client.prototype._job_request = function(data, accept) {
     accept({accept: true});
     var done = function(error, results) {
       logger.info('job_ready', results);
-      this._socket.emit('job_ready', results);
+      this._socket.emit('job_ready', error, results);
       this._available();
     };
     this._job_execute(data, done.bind(this));

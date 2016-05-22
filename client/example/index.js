@@ -5,26 +5,31 @@ var fs = require('fs'),
 
 var my_executor = function (job, done) {
     console.log('press enter to finish job..');
-    /*
+    
     process.stdin.on('readable', () => {
         var chunk = process.stdin.read();
         if (chunk !== null) {
-            //
-            done(null,  //execution fatal errors, like invalid environments, problems with system
+            var str = chunk.toString();
+            if (str.match(/fail/)) {
+                done({error: str});
+            } else {
+                done(null,  //execution fatal errors, like invalid environments, problems with system
                  {
                     job: job,
-                    success: true,
                     results: {
-                        data: chunk.toString()
+                        data: str
                     }
                  }
             );
+            }
+            //
+            
         }
-    });*/
-    
+    });
+    /*
     setTimeout( function() {
       done(null, {job: job, success: true, results: 'asd'});
-    }, 5000);
+    }, 5000);*/
 };
 
 my_capabilities = [
@@ -33,8 +38,6 @@ my_capabilities = [
 
 client = new Client({
     executor: my_executor
-});
-
-client.addCapability('ls');
-
+})
+client.addCapability('ls')
 client.connect();
