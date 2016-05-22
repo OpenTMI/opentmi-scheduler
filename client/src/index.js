@@ -42,11 +42,13 @@ util.inherits(Client, EventEmitter);
 // class methods
 Client.prototype.addCapability = function(capability) {
     this.client_info.capabilities.push({id: capability});
+    return this;
 }
 Client.prototype.connect = function() {
   logger.silly('connecting..');
   this._socket = io.connect(this.url);
   this._socket.on('connect', this._onConnected.bind(this));
+  return this;
 };
 // class internal functions:
 Client.prototype._onDisconnected = function() {
