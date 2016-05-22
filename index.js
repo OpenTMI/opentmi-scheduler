@@ -114,7 +114,6 @@ function AddonTaskScheduler (app, server, io, passport){
         getClient(socket.id).registered = false;
     };
     var job_ready = function (error, data) {
-      
       var socket = this;
       var client = getClient(socket.id);
       client.job = false;
@@ -123,7 +122,6 @@ function AddonTaskScheduler (app, server, io, passport){
       } else {
         logger.info('job_ready: ', data);
       }
-
     }
     var available = function (data) {
         var socket = this;

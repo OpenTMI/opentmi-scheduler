@@ -8,15 +8,27 @@ Scheduler provide socketio API for "executors" which run some jobs, e.g. test jo
 SCHEDULER                   CLIENT
   socketio url: "<host>/scheduler"
 
-  <-- connect           ---
-  <-- register_request  ---
-  --- register_response -->
+  <-- connect           ---  socket.io:connect -event
+  <-- register(data, cb)---  client details
+  --- cb(error)         -->  denied if error exists, otherwise accepted
 ------------------------------
   <--  available        ---  available for jobs
-  ---  job_request      -->  host request to execute job
-  <--  job_response     ---  client can accept/denied job
+  ---  job(data, cb)     -->  host request to execute job
+  <--  cb(error)        ---  client can denied job by giving error
+  <--  job_status       ---  NA
   <--  job_ready        ---  when execution finished..
 ------------------------------
+```
+
+register data:
+```
+{
+  id: <client-id>,
+  capabilities: [
+    { id: <id> }
+  ],
+  ..
+}
 ```
 
 REST api:
