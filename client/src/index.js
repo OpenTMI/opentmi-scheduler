@@ -47,23 +47,25 @@ Client.prototype.connect = function() {
   logger.silly('connecting..');
   this._socket = io.connect(this.url);
   this._socket.on('connect', this._onConnected.bind(this));
-  this._socket.on('reconnect', this._onConnected.bind(this));
-  this._socket.on('disconnect', this._onDisconnected.bind(this));
 };
 // class internal functions:
 Client.prototype._onDisconnected = function() {
   logger.warn('Scheduler connetion lost');
 }
 Client.prototype._onConnected = function() {
-  logger.info('connected. send register_request');
+  logger.info('connected, registering..');
   this._socket.removeAllListeners();
-  this._socket.emit('register_request', this.client_info);
-  this._socket.once('register_response', this._register_response.bind(this));
+  this._socket.on('disconnect', this._onDisconnected.bind(this));
+  this._socket.on('reconnect', this._onConnected.bind(this));
+  this._socket.emit('register', this.client_info, this._register_cb.bind(this));
 };
-Client.prototype._register_response = function(data) {
-    logger.silly("register_response:", data);
-    //@todo check if host accept my registering..
-    this._available();
+Client.prototype._register_cb = function(error, data) {
+    logger.silly("register_response:", error || data);
+    if(error) {
+        logger.error(error);
+    } else {
+        this._available();
+    }
 };
 Client.prototype._available = function(data) {
     data = data || {};

@@ -22,9 +22,9 @@ function AddonTaskScheduler (app, server, io, passport){
     this.description = 'Schedule tasks';
     var get_tasks = function () {
       return [
-            {id:1, duration: 30, resources: ['A']},
-            {id:2, duration: 60, resources: ['ls']},
-            {id:3, duration: 60, resources: [['B', 'D'], 'A']}
+            {id:11, duration: 30, resources: ['A']},
+            {id:22, duration: 60, resources: ['ls']},
+            {id:33, duration: 60, resources: ['A']}
         ];
     };
     var get_client_resources = function (client) {
@@ -39,23 +39,16 @@ function AddonTaskScheduler (app, server, io, passport){
     var next_job = function (client, cb) {
         var tasks = get_tasks();
         var resources = get_client_resources(client);
-        logger.silly('client resources: ', resources);
-        logger.silly('tasks: ', tasks);
+        //logger.silly('client resources: ', resources);
+        //logger.silly('tasks: ', tasks);
         //http://bunkat.github.io/schedule/
-        /*var tasks = [
-          {id: 1, duration: 60},
-          {id: 2, duration: 30, dependsOn: [1], resources: ['A']},
-          {id: 3, duration: 30, dependsOn: [1], resources: [['A','B']]}
-        ];
-        var resources = [ {id: 'A'}, {id: 'B'} ];
-        logger.silly('resources: ', resources);
-        logger.silly('tasks: ', tasks);
-         
+        
+        console.log(tasks, resources);
+
         var schedule = Schedule.create(tasks, resources);
-        logger.silly(schedule)
+        logger.silly(JSON.stringify(schedule, null, 2))
         //cb(null, schedule[0]);
         
-        */
         var task = tasks[0];
         logger.silly('request task: ', task);
         cb(null, task);
@@ -86,26 +79,35 @@ function AddonTaskScheduler (app, server, io, passport){
     var connection = function (socket){
         logger.debug('client connected, wait for register request');
         //bind events 
-        socket.on('register_request', register_request.bind(socket));
+        socket.on('register', register_request.bind(socket));
         socket.on('disconnect', disconnect.bind(socket));
         socket.on('error', function(error){logger.error(error);});
     };
-    var register_request = function (data) {
+    var disconnect = function() {
+        logger.debug('client %s disconnected', this.id);
+        var socket = this,
+            client = getClient(socket.id);
+        if (client) {
+            client.connected = false;
+        }
+    };
+    var register_request = function (data, cb) {
+        console.log(cb);
         var socket = this;
-        logger.info('register_request:', data);
+        logger.info('register:', data);
         var client = getClient(data.id);
         if (!client) {
           client = _.extend(data, {
               id: data.id,
-              socketid: socket.id, 
-              registered: true
+              socketid: socket.id
           });
+          client.connected = true;
           clients.push(client);
         }
         socket.on('unregister', unregister.bind(this));
         socket.on('available', available.bind(socket));
         socket.on('job_ready', job_ready.bind(socket));
-        socket.emit('register_response', client);
+        cb(null, client); //accept
     };
     var unregister = function (data) {
         var socket = this;
@@ -126,6 +128,10 @@ function AddonTaskScheduler (app, server, io, passport){
     var available = function (data) {
         var socket = this;
         var client = getClient(socket.id);
+        if(!client) {
+            socket.disconnect();
+            return;
+        }
         console.log(client);
         logger.silly('find next job for client %s', client.id);
         
@@ -142,14 +148,6 @@ function AddonTaskScheduler (app, server, io, passport){
                 socket.emit('job_request', job, job_accept);
             }
         }.bind(this));
-    };
-
-    var disconnect = function() {
-        var socket = this,
-            client = getClient(socket.id);
-        if (client) {
-            client.connected = false;
-        }
     };
 
     return this;
