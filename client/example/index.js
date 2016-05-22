@@ -5,6 +5,7 @@ var fs = require('fs'),
 
 var my_executor = function (job, done) {
     console.log('press enter to finish job..');
+    /*
     process.stdin.on('readable', () => {
         var chunk = process.stdin.read();
         if (chunk !== null) {
@@ -19,7 +20,11 @@ var my_executor = function (job, done) {
                  }
             );
         }
-    });
+    });*/
+    
+    setTimeout( function() {
+      done(null, {job: job, success: true, results: 'asd'});
+    }, 5000);
 };
 
 my_capabilities = [
@@ -27,8 +32,9 @@ my_capabilities = [
 ];
 
 client = new Client({
-    executor: my_executor,
-    capabilities: my_capabilities
+    executor: my_executor
 });
+
+client.addCapability('ls');
 
 client.connect();

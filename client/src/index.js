@@ -34,20 +34,29 @@ var Client = function (options) {
     app: {
       pid: process.pid,
     },
-    capabilities: options.capabilities || {}
+    capabilities: []
   } 
 }
 util.inherits(Client, EventEmitter);
 
 // class methods
+Client.prototype.addCapability = function(capability) {
+    this.client_info.capabilities.push({id: capability});
+}
 Client.prototype.connect = function() {
   logger.silly('connecting..');
   this._socket = io.connect(this.url);
   this._socket.on('connect', this._onConnected.bind(this));
+  this._socket.on('reconnect', this._onConnected.bind(this));
+  this._socket.on('disconnect', this._onDisconnected.bind(this));
 };
 // class internal functions:
+Client.prototype._onDisconnected = function() {
+  logger.warn('Scheduler connetion lost');
+}
 Client.prototype._onConnected = function() {
   logger.info('connected. send register_request');
+  this._socket.removeAllListeners();
   this._socket.emit('register_request', this.client_info);
   this._socket.once('register_response', this._register_response.bind(this));
 };
@@ -71,7 +80,7 @@ Client.prototype._job_execute = function(job, done) {
     } 
 }
 Client.prototype._job_request = function(data, accept) {
-    logger.debug('Job request accepted: ', data);
+    logger.debug('Job request accepted:', data);
     accept({accept: true});
     var done = function(error, results) {
       logger.info('job_ready', results);
