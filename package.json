@@ -5,6 +5,8 @@
   "description": "OpenTMI task scheduler addon",
   "main": "index.js",
   "scripts": {
+    "snyk-protect": "snyk protect",
+    "prepublish": "npm run snyk-protect"
   },
   "repository": {
     "type": "git",
@@ -29,11 +31,12 @@
       "controller": "SchedulerCtrl"
     }
   },
-  "devDependencies": {
-  },
+  "devDependencies": {},
   "dependencies": {
     "lodash": "*",
     "schedulerjs": "*",
-    "winston": "*"
-  }
+    "winston": "*",
+    "snyk": "^1.316.1"
+  },
+  "snyk": true
 }
