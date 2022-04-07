@@ -27,7 +27,7 @@
   "homepage": "https://github.com/OpenTMI/opentmi-scheduler/client#readme",
   "dependencies": {
     "lodash": "^4.12.0",
-    "winston": "^2.2.0",
+    "winston": "^3.3.0",
     "socket.io-client": "*"
   }
 }
